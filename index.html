@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Kernroutine</title>
+<meta name="description" content="Tägliche und wöchentliche Gewohnheiten konsequent durchhalten – lokal, ohne Cloud, ohne Tracking.">
+<meta name="theme-color" content="#3A4A42">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kernroutine">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <h1>Kernroutine</h1>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span class="points" id="points-display">0 Pkt.</span>
+      <button id="settings-btn" aria-label="Einstellungen" style="min-width:44px;min-height:44px;background:none;border:none;font-size:20px;">⚙️</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="view-today" class="view"></section>
+    <section id="view-goals" class="view"></section>
+    <section id="view-stats" class="view"></section>
+  </main>
+
+  <button class="fab" id="fab-add-goal" aria-label="Neues Ziel" style="display:none;">+</button>
+
+  <nav class="bottom-nav">
+    <button data-view="today" class="active"><span class="icon">🏠</span>Heute</button>
+    <button data-view="goals"><span class="icon">🎯</span>Ziele</button>
+    <button data-view="stats"><span class="icon">📊</span>Statistik</button>
+  </nav>
+
+  <!-- Undo-Toast -->
+  <div id="undo-toast" class="notice" style="position:fixed; left:16px; right:16px; bottom:96px; display:none; align-items:center; justify-content:space-between; z-index:25;">
+    <span>Check-in gespeichert.</span>
+    <button id="undo-toast-btn" class="btn ghost" style="padding:0 12px; min-height:36px;">Rückgängig</button>
+  </div>
+
+  <!-- Sheet-Backdrop -->
+  <div id="sheet-backdrop" class="sheet-backdrop"></div>
+
+  <!-- Ziel-Wizard -->
+  <div id="sheet-goal" class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Neues Ziel</h2>
+    <div class="step-indicator" id="wizard-step-indicator">Schritt 1 von 3</div>
+    <div id="wizard-body"></div>
+    <div class="sheet-actions">
+      <button class="btn secondary" id="wizard-back">Zurück</button>
+      <button class="btn" id="wizard-next">Weiter</button>
+    </div>
+  </div>
+
+  <!-- Reflexions-Sheet -->
+  <div id="sheet-reflection" class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Check-in: <span id="reflection-goal-title"></span></h2>
+    <label id="reflection-value-label">Wert</label>
+    <input type="number" id="reflection-value" min="0">
+    <label>Notiz (optional)</label>
+    <textarea id="reflection-note" placeholder="Wie ist es gelaufen?"></textarea>
+    <label>Bewertung (optional)</label>
+    <div class="chip-row" id="reflection-rating">
+      <button class="chip" data-value="1">1</button>
+      <button class="chip" data-value="2">2</button>
+      <button class="chip" data-value="3">3</button>
+      <button class="chip" data-value="4">4</button>
+      <button class="chip" data-value="5">5</button>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn secondary" data-close-sheet="sheet-reflection">Abbrechen</button>
+      <button class="btn" id="reflection-submit">Speichern</button>
+    </div>
+  </div>
+
+  <!-- Push-Erklärung vor nativem iOS-Dialog -->
+  <div id="sheet-notif-explain" class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Erinnerungen aktivieren?</h2>
+    <p class="notice">Kernroutine kann dich zur gewünschten Uhrzeit an dein Ziel erinnern – nur lokal auf diesem Gerät, ohne Server, ohne Tracking. Im nächsten Schritt fragt iOS um Erlaubnis. Du kannst das jederzeit in den Einstellungen widerrufen.</p>
+    <div class="sheet-actions">
+      <button class="btn secondary" id="notif-later-btn">Später</button>
+      <button class="btn" id="notif-allow-btn">Erlauben</button>
+    </div>
+  </div>
+
+  <!-- Lesetimer -->
+  <div id="sheet-reading-timer" class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Lesetimer: <span id="reading-goal-title"></span></h2>
+    <div class="timer-display" id="reading-display">20:00</div>
+    <label style="display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" id="reading-audio-toggle" style="width:20px;height:20px;"> Lo-fi-Hintergrundsound (lokal)
+    </label>
+    <div class="sheet-actions">
+      <button class="btn secondary" data-close-sheet="sheet-reading-timer">Schließen</button>
+      <button class="btn" id="reading-start-btn">Start</button>
+    </div>
+  </div>
+
+  <!-- Atemtimer -->
+  <div id="sheet-meditation-timer" class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Atemtimer</h2>
+    <label>Dauer (Minuten)</label>
+    <input type="number" id="meditation-duration" min="1" max="20" value="5">
+    <div class="breath-circle paused" id="breath-circle">Ein · Aus</div>
+    <div class="timer-display" id="meditation-display">05:00</div>
+    <div class="sheet-actions">
+      <button class="btn secondary" data-close-sheet="sheet-meditation-timer">Schließen</button>
+      <button class="btn" id="meditation-start-btn">Start</button>
+    </div>
+  </div>
+
+  <!-- Einstellungen -->
+  <div id="sheet-settings" class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Einstellungen &amp; Datenschutz</h2>
+    <p class="notice">Alle Daten bleiben ausschließlich auf diesem Gerät (IndexedDB). Es gibt keine Cloud-Synchronisierung, kein Nutzerkonto, kein Tracking und keine Werbung.</p>
+    <button class="btn secondary full" id="export-btn" style="margin-bottom:10px;">Daten als JSON exportieren</button>
+    <button class="btn danger full" id="reset-btn">Alle Daten lokal zurücksetzen</button>
+    <div class="sheet-actions">
+      <button class="btn secondary full" data-close-sheet="sheet-settings">Schließen</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="./db.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
